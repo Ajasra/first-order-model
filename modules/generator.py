@@ -56,7 +56,7 @@ class OcclusionAwareGenerator(nn.Module):
             deformation = deformation.permute(0, 2, 3, 1)
         return F.grid_sample(inp, deformation)
 
-    def forward(self, source_image, uv, kp_driving, kp_source):
+    def forward(self, source_image, kp_driving, kp_source):
         # Encoding (downsampling) part
         out = self.first(source_image)
         for i in range(len(self.down_blocks)):
@@ -85,7 +85,6 @@ class OcclusionAwareGenerator(nn.Module):
                 out = out * occlusion_map
 
             output_dict["deformed"] = self.deform_input(source_image, deformation)
-            output_dict["uv"] = self.deform_input(uv, deformation)
 
         # Decoding part
         out = self.bottleneck(out)

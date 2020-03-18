@@ -44,13 +44,12 @@ def parse_args():
     return parser.parse_args()
 
 """ here your functions """
-def main_pipeline(source, uv, data, generator, kp_detector, cur_frame, kp_driving_initial):
+def main_pipeline(source, data, generator, kp_detector, cur_frame, kp_driving_initial):
 
     with torch.no_grad():
 
         data = data/255
         source = torch.tensor(source[np.newaxis].astype(np.float32)).permute(0, 3, 1, 2).cuda()
-        uv = torch.tensor(uv[np.newaxis].astype(np.float32)).permute(0, 3, 1, 2).cuda()
         driving = torch.tensor(data[np.newaxis].astype(np.float32)).permute(0, 3, 1, 2).cuda()
         kp_source = kp_detector(source)
         if cur_frame < 10:
@@ -61,7 +60,7 @@ def main_pipeline(source, uv, data, generator, kp_detector, cur_frame, kp_drivin
                                    kp_driving_initial=kp_driving_initial, use_relative_movement=True,
                                    use_relative_jacobian=True, adapt_movement_scale=True)
 
-        out = generator(source, uv, kp_source=kp_source, kp_driving=kp_norm)
+        out = generator(source, kp_source=kp_source, kp_driving=kp_norm)
 
         output = np.transpose(out['prediction'].data.cpu().numpy(), [0, 2, 3, 1])[0]
         #print(output.shape)
@@ -106,11 +105,10 @@ def main():
     generator, kp_detector = load_checkpoints(config_path='config/vox-256.yaml', 
                             checkpoint_path='checkpoints/vox-adv-cpk.pth.tar')
 
-    source_image = imageio.imread('datasets/adon_cr.jpg')
+    source_image = imageio.imread('datasets/statue-01.png')
     uv = imageio.imread('datasets/uv.jpg')
     #Resize image and video to 256x256
     source_image = resize(source_image, (256, 256))[..., :3]
-    uv = resize(uv, (256, 256))[..., :3]
 
     kp_driving_initial = kp_detector(torch.tensor(source_image[np.newaxis].astype(np.float32)).permute(0, 3, 1, 2).cuda())
 
@@ -174,7 +172,7 @@ def main():
             data = np.ones((width,height,3))*255
         
         # call our main function
-        output, kp_driving_initial = main_pipeline(source_image, uv, data, generator, kp_detector, cur_frame, kp_driving_initial)
+        output, kp_driving_initial = main_pipeline(source_image, data, generator, kp_detector, cur_frame, kp_driving_initial)
 
         cur_frame += 1
         
