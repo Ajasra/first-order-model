@@ -31,12 +31,14 @@ from modules.keypoint_detector import KPDetector
 from animate import normalize_kp
 from scipy.spatial import ConvexHull
 
+IMG_WIDTH, IMG_HEIGHT = 256,256
+
 """parsing and configuration"""
 def parse_args():
     desc = "Spout receiver/sender template"
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--type', type=str, default='input-output', help='input/output/input-output')
-    parser.add_argument('--spout_size', nargs = 2, type=int, default=[256, 256], help='Width and height of the spout receiver and sender')   
+    parser.add_argument('--spout_size', nargs = 2, type=int, default=[IMG_WIDTH, IMG_HEIGHT], help='Width and height of the spout receiver and sender')   
     parser.add_argument('--spout_input_name', type=str, default='input', help='Spout receiving name')  
     parser.add_argument('--spout_output_name', type=str, default='output', help='Spout sending name')  
     parser.add_argument('--silent', type=bool, default=False, help='Hide pygame window')
@@ -62,9 +64,7 @@ def main_pipeline(source, data, generator, kp_detector, cur_frame, kp_driving_in
 
         out = generator(source, kp_source=kp_source, kp_driving=kp_norm)
 
-        output = np.transpose(out['prediction'].data.cpu().numpy(), [0, 2, 3, 1])[0]
-        #print(output.shape)
-        
+        output = np.transpose(out['prediction'].data.cpu().numpy(), [0, 2, 3, 1])[0]     
         
         output = output * 255
         
@@ -105,10 +105,10 @@ def main():
     generator, kp_detector = load_checkpoints(config_path='config/vox-256.yaml', 
                             checkpoint_path='checkpoints/vox-adv-cpk.pth.tar')
 
-    source_image = imageio.imread('datasets/statue-01.png')
+    source_image = imageio.imread('datasets/statue-02.png')
     uv = imageio.imread('datasets/uv.jpg')
     #Resize image and video to 256x256
-    source_image = resize(source_image, (256, 256))[..., :3]
+    source_image = resize(source_image, (IMG_WIDTH, IMG_HEIGHT))[..., :3]
 
     kp_driving_initial = kp_detector(torch.tensor(source_image[np.newaxis].astype(np.float32)).permute(0, 3, 1, 2).cuda())
 
@@ -173,6 +173,7 @@ def main():
         
         # call our main function
         output, kp_driving_initial = main_pipeline(source_image, data, generator, kp_detector, cur_frame, kp_driving_initial)
+        #output = data
 
         cur_frame += 1
         
