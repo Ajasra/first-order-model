@@ -1,0 +1,6 @@
+
+__pycache__/*
+checkpoints/*
+datasets/*
+generated.mp4
+*/__pycache__/*
